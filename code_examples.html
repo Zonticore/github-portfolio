@@ -27,11 +27,11 @@
     <div class="container px-3">
       <a class="navbar-brand fw-bold text-light" href="index.html">← Back</a>
       <ul class="navbar-nav flex-row gap-3">
-        <li class="nav-item"><a class="nav-link text-light" href="#leetcode-valid-parentheses">LeetCode</a></li>
-        <li class="nav-item"><a class="nav-link text-light" href="#diggems-populate-gems">Populate Gems</a></li>
-        <li class="nav-item"><a class="nav-link text-light" href="#diggems-gem">Gem</a></li>
-        <li class="nav-item"><a class="nav-link text-light" href="#diggems-mineable">Mineable</a></li>
-        <li class="nav-item"><a class="nav-link text-light" href="#diggems-iteminstance">ItemInstance</a></li>
+        <li class="nav-item"><a class="nav-link text-light" href="#EntityFactory">EntityFactory</a></li>
+        <li class="nav-item"><a class="nav-link text-light" href="#ItemEntity">ItemEntity</a></li>
+        <li class="nav-item"><a class="nav-link text-light" href="#OreFactory">OreFactory</a></li>
+        <li class="nav-item"><a class="nav-link text-light" href="#GemFactory">GemFactory</a></li>
+        <li class="nav-item"><a class="nav-link text-light" href="#Mortality">Mortality</a></li>
       </ul>
     </div>
   </nav>
@@ -39,441 +39,267 @@
   <main class="container section">
     <header class="mb-4">
       <h1 class="h3">Code Examples</h1>
-      <p class="text-secondary">Your snippets, unchanged (formatting only). Click any “Copy” to put the code on your clipboard.</p>
+      <p class="text-secondary">Here’s a small excerpt from my project Diggems. This sample highlights a data-driven factory system used for spawning and configuring ItemEntity instances. The architecture favors composition over inheritance, making it incredibly versatile and easy to extend as new item types, behaviors, and drop logic are added.</p>
     </header>
 
-    <section id="leetcode-valid-parentheses" class="mb-5">
-      <h2 class="h4 mb-3">Valid Parentheses (LeetCode)</h2>
+    <section id="EntityFactory" class="mb-5">
+      <h2 class="h4 mb-3">EntityFactory</h2>
       <div class="card card-dark mb-3">
         <div class="card-body">
-          <pre><button class="btn btn-sm btn-secondary copy" data-target="code1">Copy</button><code id="code1" class="language-cs">public bool IsValid(string s) {
-        char[] checkingOpens = {&#x27;(&#x27;, &#x27;{&#x27;, &#x27;[&#x27;};
-        char[] checkingCloses = {&#x27;)&#x27;, &#x27;}&#x27;, &#x27;]&#x27;};
-
-        Stack&lt;int&gt; contextWindows = new Stack&lt;int&gt;();
-
-        int c = 0;
-        while(c &lt; s.Length)
-        {
-            for (int i = 0; i &lt; 3; i++) {
-                if (checkingOpens[i] == s[c])
-                {
-                    contextWindows.Push(i);
-                    break;
-                }
-                if (checkingCloses[i] == s[c])
-                {
-                    if (contextWindows.Count == 0) return false;
-                    var latestContext = contextWindows.Peek();
-                    if (checkingCloses[latestContext] != s[c])
-                    {
-                        return false;
-                    }
-                    contextWindows.Pop();
-                    break;
-                }
-            }
-            c++;
-        }
-        return contextWindows.Count == 0;
-    }</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <section id="diggems-populate-gems" class="mb-5">
-      <h2 class="h4 mb-3">Diggems: Populate Gems (Spawn on 3D Ore)</h2>
-      <div class="card card-dark mb-3">
-        <div class="card-body">
-          <pre><button class="btn btn-sm btn-secondary copy" data-target="code2">Copy</button><code id="code2" class="language-cs">private async void populateGems()
-    {
-        await UniTask.WaitUntil(activeInHierarchyFunc);
-
-        possibleGems = new List&lt;LevelBasedDataEntry.EntryValue&gt;();
-        if (forcedGemsToSpawn != null)
-        {
-            possibleGems = forcedGemsToSpawn;
-            forcedGemsToSpawn = null;
-        }
-        else
-        {
-            var gemDataForLevel = AssetManager.instance.getLevelBaseDatabase().getGemDataForLevel(UserManager.instance.getUser().getLevel());
-            possibleGems = gemDataForLevel.entryValues.ToList();
-        }
-        gemsToAdd = 0;
-        foreach (var entry in possibleGems)
-        {
-            entry.setRandomQuantity();
-            gemsToAdd += entry.quantity;
-        }
-        for (int i = 0; i &lt; gemsToAdd; i++)
-        {
-            var randomDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f));
-            const int distOut = 25;
-            var rayOrigin = transform.position + (randomDirection * distOut);
-
-            Ray ray = new(rayOrigin, -randomDirection);
-            Vector3 spawnPoint = transform.position;
-            if (Physics.Raycast(ray, out RaycastHit hit, distOut * 2, oreRaycastLayer))
-            {
-                spawnPoint = hit.point;
-                createGem(spawnPoint, randomDirection.normalized);
-            }
-            else
-            {
-                createGem(spawnPoint, Vector3.up);
-            }
-        }
-    }
-
-    private void createGem(Vector3 spawnPoint, Vector3 targetDirection)
-    {
-        while (itemsSpawned &gt;= possibleGems[spawningItemIndex].quantity)
-        {
-            spawningItemIndex++;
-            itemsSpawned = 0;
-        }
-        var spawningItem = possibleGems[spawningItemIndex];
-        itemsSpawned++;
-        var created = Instantiate(gemPrefab, graphic);
-        created.transform.position = spawnPoint;
-        var destroyCb = new Action&lt;ItemInstance&gt;(onGemDestroyed);
-        var spawningGemAsset = AssetManager.instance.getInventoryAsset(spawningItem.id);
-        created.setupWithAsset(spawningGemAsset, destroyCb);
-        created.transform.rotation = Quaternion.FromToRotation(Vector3.up, targetDirection);
-        gems.Add(created);
-    }</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <section id="diggems-gem" class="mb-5">
-      <h2 class="h4 mb-3">Diggems: Gem (Mineable)</h2>
-      <div class="card card-dark mb-3">
-        <div class="card-body">
-          <pre><button class="btn btn-sm btn-secondary copy" data-target="code3">Copy</button><code id="code3" class="language-cs">using UnityEngine;
-using Random = UnityEngine.Random;
-
-public class Gem : Mineable
+          <pre><button class="btn btn-sm btn-secondary copy" data-target="code1">Copy</button>
+            <code id="code1" class="language-cs">
+public class EntityFactory : MonoBehaviour
 {
-    [SerializeField] private GameObject popParticle;
+    [SerializeField] private GemEffectFactory gemEffectFactory;
+    [SerializeField] private OreFactorySO oreFactory;
+    [SerializeField] private GemFactorySO gemFactory;
+    [SerializeField] private PetEggFactorySO petEggFactory;
+    [SerializeField] private TreasureChestFactorySO treasureChestFactory;
+    [SerializeField] private DropitemFactorySO dropitemFactory;
 
-    protected override void onSetup()
+    public ItemEntity createOre(InventoryAsset asset, Vector3? spawnPoint) =&gt; oreFactory.create(this, asset, spawnPoint);
+    public ItemEntity createGem(InventoryAsset asset, Vector3? spawnPoint) =&gt; gemFactory.create(this, asset, spawnPoint);
+    public ItemEntity createPetEgg(InventoryAsset asset, Vector3? spawnPoint) =&gt; petEggFactory.create(this, asset, spawnPoint);
+    public ItemEntity createTreasureChest(InventoryAsset asset, Vector3? spawnPoint) =&gt; treasureChestFactory.create(this, asset, spawnPoint);
+    public ItemEntity createDropitem(InventoryAsset asset, Vector3? spawnPoint = null) =&gt; dropitemFactory.create(this, asset, spawnPoint);
+
+
+    public ItemEntity createMortalEntity(InventoryAsset asset, Vector3? spawnPoint, int layer)
     {
-        base.onSetup();
+        var itemEntity = createItemEntity(asset, spawnPoint, layer);
 
-        var clickable = graphic.gameObject.AddComponent&lt;Clickable&gt;();
-        clickable.setClickCallback(OnClick);
+        var mortality = itemEntity.AddComponent&lt;Mortality&gt;();
+        var damagedEffect = itemEntity.AddComponent&lt;DamagedEffect&gt;();
+        mortality.setup(determineMaxHp(asset));
+        mortality.getDamagedEvent().AddListener(damagedEffect.onDamaged);
+        itemEntity.AddComponent&lt;DeathEffect&gt;();
+        itemEntity.AddComponent&lt;ShakeEffect&gt;();
+        var pickDamager = itemEntity.AddComponent&lt;PickDamager&gt;();
+        var clickable = itemEntity.getGraphic().AddComponent&lt;Clickable&gt;();
+        clickable.getClickUpCallback().AddListener(pickDamager.hit);
+        itemEntity.AddComponent&lt;StatusEffectManager&gt;();
 
-        maxHp = (long)Random.Range(inventoryAsset.hpRange.x, inventoryAsset.hpRange.y);
-        updateHp(maxHp);
+        return itemEntity;
     }
 
-    private void OnClick()
+    public ItemEntity createItemEntity(InventoryAsset asset, Vector3? spawnPoint, int layer)
     {
-        var equippedPickaxe = UserManager.instance.getUser().getInventory().equippedPickaxe;
-        if (equippedPickaxe == null)
-        {
-            pick(2);//Default of 2 damage for now...
-        }
-        else
-        {
-            pick(equippedPickaxe.damage);
-        }
+        var go = new GameObject();
+        go.layer = layer;
+        go.name = asset.assetId;
+        var itemEntity = go.AddComponent&lt;ItemEntity&gt;();
+        itemEntity.setup(asset);
+        if (spawnPoint.HasValue) itemEntity.transform.position = spawnPoint.Value;
+        return itemEntity;
     }
 
-    protected override void pick(long pickDamage)
+    private long determineMaxHp(InventoryAsset asset)
     {
-        if (isPoppedOff) return;
-
-        base.pick(pickDamage);
-        
-        if (hp &lt;= 0)
-        {
-            popOff();
-        }
+        return (long)Random.Range(asset.hpRange.x, asset.hpRange.y);
     }
-
-    public void popOff()
-    {
-        if (isPoppedOff) return;
-        applyGravity();
-        HapticFeedback.instance.LightFeedback();
-        isPoppedOff = true;
-        destroyAfterMaxLife();
-
-        SoundManager.instance.playPopOffSound();
-        
-        var popParticleEffect = Instantiate(popParticle);
-        popParticleEffect.transform.position = transform.position;
-        Destroy(popParticleEffect, 3);
-    }
-
-    public bool getIsPoppedOff() { return isPoppedOff; }
-
-    private bool isPoppedOff;
-}</code></pre>
+}
+            </code></pre>
         </div>
       </div>
     </section>
 
-    <section id="diggems-mineable" class="mb-5">
-      <h2 class="h4 mb-3">Diggems: Mineable (Base Class)</h2>
+    <section id="ItemEntity" class="mb-5">
+      <h2 class="h4 mb-3">ItemEntity</h2>
       <div class="card card-dark mb-3">
         <div class="card-body">
-          <pre><button class="btn btn-sm btn-secondary copy" data-target="code4">Copy</button><code id="code4" class="language-cs">using UnityEngine;
-using Random = UnityEngine.Random;
-
-
-public class Mineable : ItemInstance
+          <pre><button class="btn btn-sm btn-secondary copy" data-target="code2">Copy</button>
+            <code id="code2" class="language-cs">
+public class ItemEntity : MonoBehaviour, IEntityInterface
 {
-
-    protected override void onSetup()
+    public void setup(InventoryAsset asset)
     {
-        base.onSetup();
-        updateHp(Random.Range(1, 7));
+        this.asset = asset;
+        createGraphic();
     }
 
-    protected virtual void pick(long pickDamage)
+    private void createGraphic()
     {
-        if (isDead) return;
-        var equippedPickaxe = UserManager.instance.getUser().getInventory().equippedPickaxe;
-        var isCrit = false;
-        if (equippedPickaxe != null)
-        {
-            if (Time.time &gt;= equippedPickaxe.cooldownEndTime)
-            {
-                equippedPickaxe.incrementCooldown();
-                pickDamage *= 2;
-                isCrit = true;
-            }
-            equippedPickaxe.decrementDurability(1);
-            UserManager.instance.getUser().sendInventoryUpdatedEvent();
-        }
-        if (pickDamage &lt;= 0) pickDamage = 2;
-
-        HapticFeedback.instance.LightFeedback();
-
-        updateHp(hp-pickDamage);
-
-
-        CodeAnimations.doShake(graphic, shake);
-        var showingDamageText = $&quot;{pickDamage}&quot;;
-        if (isCrit) showingDamageText = &quot;&lt;sprite name=\&quot;DamageIcon\&quot;&gt;&quot; + showingDamageText;
-        
-        UIManager.instance.popTextManager.showDropText(graphic.position, showingDamageText, PopTextManager.PopTextType.Damage, 32);
-
-
-        if (equippedPickaxe != null)
-        {
-            playPickSoundPick();
-        }
-        else
-        {
-            playPickSoundHand();
-        }
-    }
-
-    protected virtual void playPickSoundHand()
-    {
-        var gameSound = SoundManager.instance.getGameSound(&quot;PunchSound&quot;);
-        AudioSource.PlayClipAtPoint(gameSound.clip, transform.position, gameSound.volume);
-        
-    }
-
-    protected virtual void playPickSoundPick()
-    {
-        AudioSource.PlayClipAtPoint(SoundManager.instance.getRandomPickSound(), transform.position, 0.5f);
-    }
-
-    public void setShake(float newVal)
-    {
-        shake = newVal;
-    }
-
-    protected void showDestroyRubble()
-    {
-        if (rubbleCount &lt;= 0) return;
-
-        // Define the 3D box bounds
-        var startPoint = transform.position - new Vector3(gridSize * spacing * 0.5f, gridSize * spacing * 0.5f, gridSize * spacing * 0.5f);
-        var boxSize = gridSize * spacing;
-
-        for (int i = 0; i &lt; rubbleCount; i++)
-        {
-            var created = createRubble();
-            if (created == null) return;
-
-            // Calculate a stratified position to approximate even spacing
-            float x = i / rubbleCount; // Linear progression for x
-            float y = i % (int)Mathf.Sqrt(rubbleCount) / Mathf.Sqrt(rubbleCount); // Rough 2D grid-like spread
-            float z = i % (int)(rubbleCount / Mathf.Sqrt(rubbleCount)) / (rubbleCount / Mathf.Sqrt(rubbleCount));
-
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-shake, shake),
-                Random.Range(-shake, shake),
-                Random.Range(-shake, shake)
-            );
-
-            // Map to the 3D box space
-            Vector3 position = startPoint + new Vector3(
-                x * boxSize,
-                y * boxSize,
-                z * boxSize
-            ) + randomOffset;
-            created.transform.position = position;
-            created.transform.rotation = Quaternion.Euler(Random.Range(-180, 180), Random.Range(-180, 180), Random.Range(-180, 180));
-            created.transform.localScale = rubbleSize;
-        }
-    }
-
-    protected virtual GameObject createRubble()
-    {
-        return null;
-    }
-
-    protected float rubbleCount = 100;
-    protected float gridSize = 6;
-    private Vector3 rubbleSize = new Vector3(0.5f, 0.5f, 0.5f);
-    private float spacing = 0.7f*0.5f;
-    private float shake = 0.1f;
-}</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <section id="diggems-iteminstance" class="mb-5">
-      <h2 class="h4 mb-3">Diggems: ItemInstance (Base)</h2>
-      <div class="card card-dark mb-3">
-        <div class="card-body">
-          <pre><button class="btn btn-sm btn-secondary copy" data-target="code5">Copy</button><code id="code5" class="language-cs">using System;
-using Cysharp.Threading.Tasks;
-using Unity.VisualScripting;
-using UnityEngine;
-using static InventoryAssetsDatabase;
-using Random = UnityEngine.Random;
-
-public class ItemInstance : MonoBehaviour
-{
-    public void setupWithAsset(InventoryAsset asset, Action&lt;ItemInstance&gt; newCb = null)
-    {
-        destroyCb = newCb;
-        inventoryAsset = asset;
-        var creatingGraphic = asset.prefab;
-        if (creatingGraphic == null)
-        {
-            creatingGraphic = AssetManager.instance.dropBag;
-            usingDropBag = true;
-        }
-        graphic = Instantiate(creatingGraphic, transform).transform;
+        if (asset.prefab == null) asset.prefab = AssetManager.instance.dropBag;
+        graphic = Instantiate(asset.prefab, transform).transform;
         graphic.gameObject.layer = gameObject.layer;
         graphic.localPosition = Vector3.zero;
-        if (faceCameraAtStart())
-        {
-            graphic.localRotation = Quaternion.Euler(Random.Range(-180, 180), Random.Range(-180, 180), Random.Range(-180, 180));
-        }
-        else
-        {
-            graphic.LookAt(Camera.main.transform);
-        }
+        graphic.LookAt(Camera.main.transform);
         meshCollider = graphic.GetComponent&lt;MeshCollider&gt;();
-        if (meshCollider == null) meshCollider = graphic.AddComponent&lt;MeshCollider&gt;();
-        onSetup();
+        if (meshCollider == null) meshCollider = graphic.gameObject.AddComponent&lt;MeshCollider&gt;();
     }
 
-    protected virtual bool faceCameraAtStart()
+    public Transform getGraphic()
     {
-        return false;
+        return graphic;
     }
 
-    protected virtual void onSetup()
+    public InventoryAsset getAsset()
     {
-
+        return asset;
     }
 
-    public void applyGravity()
+    private Transform graphic;
+    private InventoryAsset asset;
+    private MeshCollider meshCollider;
+}
+            </code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="OreFactory" class="mb-5">
+      <h2 class="h4 mb-3">OreFactory</h2>
+      <div class="card card-dark mb-3">
+        <div class="card-body">
+          <pre><button class="btn btn-sm btn-secondary copy" data-target="code3">Copy</button>
+          <code id="code3" class="language-cs">
+[CreateAssetMenu(fileName = "OreFactory", menuName = "EntityFactories/OreFactory")]
+public class OreFactorySO : EntityFactorySO
+{
+    public override ItemEntity create(EntityFactory context, InventoryAsset asset, Vector3? spawnPoint)
     {
-        transform.SetParent(null);
-        gameObject.layer = 0;
-        graphic.gameObject.layer = 0;
-        var rb = gameObject.AddComponent&lt;Rigidbody&gt;();
-        rb.isKinematic = false;
+        var itemEntity = context.createMortalEntity(asset, spawnPoint, getLayerMask());
+        var deathEffect = itemEntity.GetComponent&lt;DeathEffect&gt;();
+        var rubbleEffect = itemEntity.AddComponent&lt;RubbleEffect&gt;();
+        deathEffect.subscribe(rubbleEffect);
+        itemEntity.AddComponent&lt;CanBeRotated&gt;();
+        itemEntity.AddComponent&lt;SpawnsEntitiesOnFace&gt;().setup(context);
+        
+        var updatesHpBar = itemEntity.AddComponent&lt;UpdatesHpBar&gt;();
+        itemEntity.GetComponent&lt;IDamagable&gt;().getDamagedEvent().AddListener((damagedAmt, isCrit) =&gt; updatesHpBar.trigger());
+        itemEntity.GetComponent&lt;DamagedEffect&gt;().setShake(0.01f);
+
+        return itemEntity;
+    }
+}
+          </code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="GemFactory" class="mb-5">
+      <h2 class="h4 mb-3">GemFactory</h2>
+      <div class="card card-dark mb-3">
+        <div class="card-body">
+          <pre><button class="btn btn-sm btn-secondary copy" data-target="code4">Copy</button>
+          <code id="code4" class="language-cs">
+[CreateAssetMenu(fileName = "GemFactory", menuName = "EntityFactories/GemFactory")]
+public class GemFactorySO : EntityFactorySO
+{
+    [SerializeField] private PopsOff.PopsOffParams popParams;
+
+    public override ItemEntity create(EntityFactory context, InventoryAsset asset, Vector3? spawnPoint)
+    {
+        var itemEntity = context.createMortalEntity(asset, spawnPoint, getLayerMask());
+
+        var popOffEffect = itemEntity.AddComponent&lt;PopsOff&gt;();
+        popOffEffect.setup(popParams);
+        var deathEffect = itemEntity.GetComponent&lt;DeathEffect&gt;();
+        deathEffect.subscribe(popOffEffect);
+
+        var givesOutRewards = itemEntity.AddComponent&lt;GivesOutRewards&gt;();
+        givesOutRewards.setup(createDropData(asset));
+
+        var triggerOnDestroy = itemEntity.AddComponent&lt;TriggerOnDestroy&gt;();
+        triggerOnDestroy.subscribe(givesOutRewards);
+
+        var rimPulse = itemEntity.getGraphic().GetComponent&lt;GemRimPulseDriver&gt;();
+        var mortality = itemEntity.GetComponent&lt;Mortality&gt;();
+        mortality.getDamagedEvent().AddListener((_, _) =&gt;
+        {
+            rimPulse.UpdateFromHP((int)mortality.getMaxHp(), (int)mortality.getCurrentHp());
+        });
+
+        return itemEntity;
+    }
+    
+    public DropData createDropData(InventoryAsset asset)
+    {
+        return new DropData(1)
+        {
+            goldValue = asset.dropGoldValue,
+            xpValue = asset.dropXpValue,
+            itemId = asset.assetId
+        };
+    }
+}
+          </code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="Mortality" class="mb-5">
+      <h2 class="h4 mb-3">Mortality</h2>
+      <div class="card card-dark mb-3">
+        <div class="card-body">
+          <pre><button class="btn btn-sm btn-secondary copy" data-target="code5">Copy</button>
+          <code id="code5" class="language-cs">
+public class Mortality : MonoBehaviour, IMortality, IDamagable
+{
+    public void setup(long maxHp)
+    {
+        this.maxHp = maxHp;
+        hp = maxHp;
     }
 
-    public virtual void die()
+    public void damage(long amt, bool isCrit)
     {
         if (isDead) return;
-        isDead = true;
 
-        giveOutRewards();
+        var modifiers = GetComponents&lt;IDamageModifier&gt;().OrderBy(m =&gt; m.getPriority());
+        long finalDamage = amt;
+        foreach (var modifier in modifiers)
+        {
+            finalDamage = modifier.modifyDamage(finalDamage);
+        }
 
-        destroyCb?.Invoke(this);
+        hp -= finalDamage;
+        if (hp &lt;= 0) die();
+        damagedEvent.Invoke(finalDamage, isCrit);
+    }
+
+    public void heal(long amt)
+    {
+        if (isDead) return;
+
+        hp += amt;
+        if (hp &gt; maxHp) hp = maxHp;
+    }
+
+    private void die()
+    {
+        deathEvent.Invoke();
+        autoDestroy();
+    }
+
+    private async void autoDestroy()
+    {
+        await UniTask.WaitForSeconds(timeToDestroyAfterDeath);
+        if (!this || !gameObject) return;
         Destroy(gameObject);
     }
 
-    private void giveOutRewards()
+    public void addStatusEffect(StatusEffect statusEffect)
     {
-        if (inventoryAsset == null) return;
-
-        if (inventoryAsset.dropGoldValue &gt; 0)
-        {
-            UniTask.Void(async () =&gt;
-            {
-                await UIManager.instance.popTextManager.showFloatUpText(graphic.position, $&quot;{UIManager.instance.getSpriteForGoldAmt(inventoryAsset.dropGoldValue)}{inventoryAsset.dropGoldValue}&quot;, PopTextManager.PopTextType.Gold, 40, UIManager.instance.getHUDController().getGoldValueRectTransform());
-                UserManager.instance.giveGold(inventoryAsset.dropGoldValue);
-            });
-        }
-
-        if (inventoryAsset.dropXpValue &gt; 0)
-        {
-            UniTask.Void(async () =&gt;
-            {
-                await UIManager.instance.popTextManager.showFloatUpText(graphic.position, $&quot;&lt;sprite name=\&quot;XP\&quot;&gt;{inventoryAsset.dropXpValue}&quot;, PopTextManager.PopTextType.XP, 25, UIManager.instance.getHUDController().geetXpValueRectTransform());
-                UserManager.instance.giveXp(inventoryAsset.dropXpValue*UserManager.xpMultiplier);
-            });
-        }
-
-        if (!inventoryAsset.notAllowedInInventory &amp;&amp; !string.IsNullOrEmpty(inventoryAsset.assetId))
-        {
-            UserManager.instance.getUser().addItem(inventoryAsset);
-        }
-
-        SoundManager.instance.playCollectGemSound();
+        statusEffects.Add(statusEffect);
     }
 
-    protected virtual void Update()
-    {
-        if (transform.position.y &lt; yDeathPosition)
-        {
-            die();
-        }
-    }
+    public bool getIsDead() { return isDead; }
+    public UnityEvent getDeathEvent() { return deathEvent; }
+    public UnityEvent&lt;long, bool&gt; getDamagedEvent() { return damagedEvent; }
+    public long getCurrentHp() { return hp; }
+    public long getMaxHp() { return maxHp; }
 
-    public async void destroyAfterMaxLife()
-    {
-        await UniTask.WaitForSeconds(maxLife);
-        die();
-    }
 
-    protected virtual void updateHp(long newVal)
-    {
-        hp = newVal;
-    }
-
-    protected bool usingDropBag;
-    protected long hp = 1;
-    protected long maxHp = 1;
-    protected long goldValue = 1;
-    protected long xpValue = 1;
-    protected bool isDead;
-    private Action&lt;ItemInstance&gt; destroyCb;
-    public InventoryAsset inventoryAsset;
-    private MeshCollider meshCollider;
-    protected Transform graphic;
-    private const int maxLife = 5;
-    private const float yDeathPosition = -2;
-
-}</code></pre>
+    private List&lt;StatusEffect&gt; statusEffects = new List&lt;StatusEffect&gt;();
+    private long hp = 1;
+    private long maxHp = 1;
+    private bool isDead;
+    private int timeToDestroyAfterDeath = 5;
+    private UnityEvent deathEvent = new UnityEvent();
+    private UnityEvent&lt;long, bool&gt; damagedEvent = new UnityEvent&lt;long, bool&gt;();
+}
+          </code></pre>
         </div>
       </div>
     </section>
